@@ -8,14 +8,3 @@ FROM (
   FROM `PROJECT_ID.agro.readings`
 )
 WHERE rn = 1;
-
--- Positions as GEOGRAPHY, ready for maps and spatial queries.
-CREATE OR REPLACE VIEW `PROJECT_ID.agro.locations` AS
-SELECT
-  sensor_id,
-  ts,
-  ST_GEOGFROMGEOJSON(value_geojson) AS geog,
-  gateway_id,
-  received_at
-FROM `PROJECT_ID.agro.readings_clean`
-WHERE property = 'location';

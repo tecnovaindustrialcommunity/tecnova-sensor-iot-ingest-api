@@ -1,9 +1,17 @@
 # agroclima-ingest-api
 
-API de ingesta de datos agroclimáticos de sensores IoT (clima del invernadero, clima exterior, suelo, riego, drenaje y posición).
+API de ingesta de datos de **estaciones de aire**. Solo hay un tipo de estación, con tres sensores:
+
+| Propiedad | Unidad (UCUM) | Rango válido |
+|---|---|---|
+| `air_temperature` | `Cel` | -50 … 70 |
+| `air_relative_humidity` | `%` | 0 … 100 |
+| `global_radiation` | `W/m2` | 0 … 1500 |
+
+Cualquier otra propiedad se rechaza con `422`.
 
 ```
-ESP32 / Raspberry / robot
+Estación de aire (ESP32 / Raspberry)
         │  POST /v1/readings  (Bearer token)
         ▼
 Cloud Run  ──valida──►  Pub/Sub "readings-raw"  ──suscripción BigQuery──►  agro.readings
@@ -14,18 +22,18 @@ Cloud Run  ──valida──►  Pub/Sub "readings-raw"  ──suscripción Big
 - **Cloud Run** valida el lote (formato, catálogo de propiedades, unidades, rangos, zona horaria) y responde `202` cuando todas las lecturas están en cola.
 - **Pub/Sub** desacopla: si BigQuery va lento o falla, los datos esperan en la cola y no se pierden.
 - La **suscripción de BigQuery** escribe cada lectura en la tabla sin código adicional. La tabla está particionada por día (`ts`) y agrupada (clustering) por `sensor_id`, `property`.
-- La vista `agro.readings_clean` elimina los duplicados de lotes reenviados (mismo `reading_id`) y `agro.locations` expone las posiciones como `GEOGRAPHY`.
+- La vista `agro.readings_clean` elimina los duplicados de lotes reenviados (mismo `reading_id`).
 
 ## Archivos
 
 | Archivo | Qué es |
 |---|---|
 | `main.py` | La API (FastAPI) |
-| `catalog.json` | Propiedades admitidas, con su unidad canónica (UCUM) y rango válido |
+| `catalog.json` | Las tres propiedades de la estación de aire, con su unidad canónica (UCUM) y rango válido |
 | `bq_schema.json`, `views.sql` | Tabla y vistas de BigQuery |
 | `deploy.sh` | Crea toda la infraestructura y despliega (se puede relanzar) |
 | `tools/new_token.py` | Genera el token de un gateway |
-| `examples/` | Un payload de ejemplo por tipo de sensor |
+| `examples/air-station.json` | Payload de ejemplo de una estación de aire |
 | `tests/test_api.py` | Pruebas locales sin Google Cloud |
 
 ## Despliegue
@@ -35,8 +43,6 @@ Requisitos: un proyecto de Google Cloud con facturación activa, y `gcloud` y `b
 ```bash
 # 1. Un token por gateway (guarda el token: solo se muestra una vez)
 python3 tools/new_token.py gw-gh1-01
-python3 tools/new_token.py gw-meteo-01
-python3 tools/new_token.py tutabot-01
 
 # 2. Desplegar (región por defecto: europe-southwest1, Madrid)
 PROJECT_ID=mi-proyecto ./deploy.sh
@@ -54,8 +60,8 @@ URL=$(gcloud run services describe agroclima-ingest-api --region europe-southwes
 curl -s -X POST "$URL/v1/readings" \
   -H "Authorization: Bearer <token de gw-gh1-01>" \
   -H "Content-Type: application/json" \
-  -d @examples/01-greenhouse-air.json
-# {"accepted":6}
+  -d @examples/air-station.json
+# {"accepted":3}
 ```
 
 En BigQuery, unos segundos después:
@@ -81,16 +87,15 @@ Un lote se acepta o se rechaza **entero**: si una lectura es inválida, no se gu
 
 ## Reglas del payload
 
-- Sobre: `schemaVersion` (`"1.0"`), `gatewayId`, `sentAt`, `readings[]` (1–1000), `event` opcional (riego).
-- Lectura: `sensorId`, `property` (del catálogo), `value`, `ts`. Opcionales: `unit`, `aggregation`, `period` (ISO 8601, p. ej. `PT10M`), `eventId`, `basedOnEventIds`, `derived`, `compensation`.
+- Sobre: `schemaVersion` (`"1.0"`), `gatewayId`, `sentAt`, `readings[]` (1–1000).
+- Lectura: `sensorId`, `property` (una de las tres del catálogo), `value` (número), `ts`. Opcionales: `unit`, `aggregation` (`mean`, `min`, `max`, `last`), `period` (ISO 8601, p. ej. `PT10M`).
 - Fechas con zona horaria (`Z`). Se guardan en UTC.
 - `unit`, si se envía, debe coincidir con la del catálogo (todavía no hay conversión de unidades).
-- `location`: `value` es un GeoJSON Point `[longitud, latitud]`, sin `unit`. `[0, 0]` se rechaza.
-- No se admiten campos desconocidos. Los datos de instalación (sitio, zona, altura, profundidad, áreas) van en el registro de sensores, no aquí.
+- No se admiten campos desconocidos. Los datos de instalación (sitio, zona, altura) van en el registro de sensores, no aquí.
 
 ## Pendiente
 
-- **Registro de sensores:** comprobar que cada `sensorId` pertenece al `gatewayId` (hay un `TODO` en `main.py`) y unir las lecturas con la ubicación vigente en ese `ts`.
+- **Registro de sensores:** comprobar que cada `sensorId` pertenece al `gatewayId` (hay un `TODO` en `main.py`) y unir las lecturas con los datos de instalación de la estación.
 - **Exportadores** a NGSI-LD (Smart Data Models) y CGO a partir de `readings_clean` + registro + catálogo.
 - **Alertas:** en Cloud Monitoring, sobre mensajes en `readings-dlq-sub` y errores 5xx de Cloud Run.
 

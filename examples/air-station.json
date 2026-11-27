@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0",
+  "gatewayId": "gw-gh1-01",
+  "sentAt": "2026-11-26T09:00:12Z",
+  "readings": [
+    {
+      "sensorId": "gh1-air01",
+      "property": "air_temperature",
+      "value": 22.6,
+      "unit": "Cel",
+      "ts": "2026-11-26T09:00:00Z",
+      "aggregation": "mean",
+      "period": "PT5M"
+    },
+    {
+      "sensorId": "gh1-air01",
+      "property": "air_relative_humidity",
+      "value": 78.4,
+      "unit": "%",
+      "ts": "2026-11-26T09:00:00Z",
+      "aggregation": "mean",
+      "period": "PT5M"
+    },
+    {
+      "sensorId": "gh1-air01",
+      "property": "global_radiation",
+      "value": 236,
+      "unit": "W/m2",
+      "ts": "2026-11-26T09:00:00Z",
+      "aggregation": "mean",
+      "period": "PT5M"
+    }
+  ]
+}
