@@ -2,11 +2,12 @@
 
 Receives batches of readings from air stations (air temperature, relative
 humidity and global radiation) over HTTPS, validates them against the
-property catalog and publishes one Pub/Sub message per reading. A BigQuery
+property catalog and the sensor registry (Cloud SQL), and publishes one Pub/Sub message per reading. A BigQuery
 subscription on the topic writes the messages to the `readings` table.
 """
 import hashlib
 import json
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -15,6 +16,11 @@ from typing import Annotated, Literal, Optional
 from fastapi import FastAPI, Header, HTTPException
 from google.cloud import pubsub_v1
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+import registry
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+log = logging.getLogger("ingest")
 
 PROJECT_ID = os.environ["PROJECT_ID"]
 TOPIC_ID = os.environ.get("TOPIC_ID", "readings-raw")
@@ -25,6 +31,9 @@ CATALOG_FILE = os.environ.get("CATALOG_FILE", str(Path(__file__).with_name("cata
 TOKEN_HASHES: dict[str, str] = json.loads(Path(TOKENS_FILE).read_text())
 # {property: {"unit": str, "min": float, "max": float}}
 CATALOG: dict[str, dict] = json.loads(Path(CATALOG_FILE).read_text())
+# Sensor -> gateway assignments from Cloud SQL (off / warn / enforce, see registry.py).
+REGISTRY = registry.from_env()
+MAX_REGISTRY_MESSAGES = 50
 
 publisher = pubsub_v1.PublisherClient()
 topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
@@ -97,7 +106,25 @@ def _authenticate(authorization: Optional[str], gateway_id: str) -> None:
         raise HTTPException(status_code=401, detail="invalid token")
     if owner != gateway_id:
         raise HTTPException(status_code=403, detail="token does not belong to this gatewayId")
-    # TODO: check against the sensor registry that every sensorId belongs to this gateway.
+
+
+def _check_registry(env: Envelope) -> None:
+    """Every sensorId must have been assigned to this gateway at the time of each reading."""
+    if REGISTRY.mode == "off":
+        return
+    try:
+        problems = REGISTRY.problems(env.gatewayId, env.readings)
+    except registry.RegistryUnavailable as e:
+        if REGISTRY.mode == "enforce":
+            log.error("registry unavailable, batch from %s rejected: %s", env.gatewayId, e)
+            raise HTTPException(status_code=503, detail="sensor registry unavailable, retry later")
+        log.warning("registry unavailable, batch from %s accepted unchecked: %s", env.gatewayId, e)
+        return
+    if not problems:
+        return
+    if REGISTRY.mode == "enforce":
+        raise HTTPException(status_code=422, detail={"registry": problems[:MAX_REGISTRY_MESSAGES]})
+    log.warning("registry problems gateway=%s: %s", env.gatewayId, problems[:MAX_REGISTRY_MESSAGES])
 
 
 def _row(env: Envelope, r: Reading, received_at: datetime) -> dict:
@@ -119,12 +146,13 @@ def _row(env: Envelope, r: Reading, received_at: datetime) -> dict:
 
 @app.get("/healthz")
 def healthz() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", "registry": REGISTRY.mode}
 
 
 @app.post("/v1/readings", status_code=202)
 def ingest(env: Envelope, authorization: Optional[str] = Header(default=None)) -> dict:
     _authenticate(authorization, env.gatewayId)
+    _check_registry(env)
     received_at = datetime.now(timezone.utc)
     futures = [
         publisher.publish(

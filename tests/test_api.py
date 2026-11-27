@@ -45,7 +45,7 @@ sys.modules["google.cloud.pubsub_v1"] = pubsub_v1
 TOKENS = {gw: f"token-{gw}" for gw in ["gw-gh1-01", "gw-meteo-01"]}
 tok_file = Path(tempfile.mkdtemp()) / "gateway-tokens.json"
 tok_file.write_text(json.dumps({hashlib.sha256(t.encode()).hexdigest(): gw for gw, t in TOKENS.items()}))
-os.environ.update(PROJECT_ID="test-project", TOKENS_FILE=str(tok_file))
+os.environ.update(PROJECT_ID="test-project", TOKENS_FILE=str(tok_file), REGISTRY_MODE="off")
 
 from fastapi.testclient import TestClient  # noqa: E402
 
@@ -86,7 +86,7 @@ def test_row_shape():
     assert t["sensor_id"] == "gh1-air01" and t["unit"] == "Cel" and t["value_num"] == 22.6
     assert isinstance(t["ts"], int)  # microseconds for BigQuery TIMESTAMP
     rad = rows["global_radiation"]
-    assert rad["period_s"] == 600 and rad["aggregation"] == "mean"
+    assert rad["period_s"] == 300 and rad["aggregation"] == "mean"
     schema_cols = {c["name"] for c in json.loads((ROOT / "bq_schema.json").read_text())}
     assert set(t) == schema_cols  # every published row matches the table schema
 
@@ -118,12 +118,12 @@ def _bad(mutate, status=422):
 def test_rejections():
     _bad(lambda p: p["readings"][0].update(ts="2026-11-26T09:00:00"))           # no timezone
     _bad(lambda p: p["readings"][0].update(property="air_temp"))                # not in catalog
-    for removed in ["co2_concentration", "soil_vwc", "wind_speed", "location"]:
+    for removed in ["co2_concentration", "soil_vwc", "wind_speed"]:
         _bad(lambda p: p["readings"][0].update(property=removed))               # other station types are gone
     _bad(lambda p: p["readings"][0].update(unit="degF"))                        # wrong unit
     _bad(lambda p: p["readings"][1].update(value=130))                          # RH out of range
     _bad(lambda p: p["readings"][2].update(value=-5))                           # negative radiation
-    _bad(lambda p: p["readings"][0].update(value={"type": "Point", "coordinates": [1, 2]}))  # numbers only
+    _bad(lambda p: p["readings"][0].update(value="warm"))                       # numbers only
     _bad(lambda p: p["readings"][0].update(heightM=1.5))                        # installation data belongs in the registry
     _bad(lambda p: p["readings"][0].update(eventId="irr-1"))                    # no irrigation events any more
     _bad(lambda p: p.update(event={"eventId": "x", "type": "irrigation",

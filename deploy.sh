@@ -5,6 +5,12 @@
 # Usage:   PROJECT_ID=my-project ./deploy.sh
 # Requires gateway-tokens.json in this folder (create it with tools/new_token.py).
 # Safe to run more than once: steps that already exist are skipped.
+#
+# Optional sensor registry in Cloud SQL (Postgres), see README:
+#   CLOUDSQL_INSTANCE=PROJECT:REGION:INSTANCE  connection name of the instance
+#   DB_PASSWORD=...     password of ingest_api (required the first time; passing it again adds a new version)
+#   REGISTRY_MODE=warn  warn (default) | enforce | off
+#   DB_NAME=agroclima  DB_USER=ingest_api
 set -euo pipefail
 
 PROJECT_ID="${PROJECT_ID:?Set PROJECT_ID}"
@@ -18,6 +24,8 @@ BQ_SUB="readings-to-bq"
 SECRET="gateway-tokens"
 SA_NAME="ingest-api"
 SA="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
+CLOUDSQL_INSTANCE="${CLOUDSQL_INSTANCE:-}"
+DB_SECRET="registry-db-password"
 
 cd "$(dirname "$0")"
 [[ -f gateway-tokens.json ]] || { echo "Missing gateway-tokens.json. Run: python3 tools/new_token.py <gatewayId>"; exit 1; }
@@ -76,14 +84,38 @@ gcloud pubsub topics add-iam-policy-binding "$TOPIC" \
 gcloud secrets add-iam-policy-binding "$SECRET" \
   --member="serviceAccount:${SA}" --role="roles/secretmanager.secretAccessor" >/dev/null
 
+ENV_VARS="PROJECT_ID=${PROJECT_ID},TOPIC_ID=${TOPIC},TOKENS_FILE=/secrets/gateway-tokens.json"
+SECRETS="/secrets/gateway-tokens.json=${SECRET}:latest"
+SQL_FLAGS=()
+if [[ -n "$CLOUDSQL_INSTANCE" ]]; then
+  echo "== 6b/7 Sensor registry (Cloud SQL ${CLOUDSQL_INSTANCE})"
+  gcloud services enable sqladmin.googleapis.com
+  if gcloud secrets describe "$DB_SECRET" >/dev/null 2>&1; then
+    if [[ -n "${DB_PASSWORD:-}" ]]; then
+      printf '%s' "$DB_PASSWORD" | gcloud secrets versions add "$DB_SECRET" --data-file=-
+    fi
+  else
+    [[ -n "${DB_PASSWORD:-}" ]] || { echo "First deploy with CLOUDSQL_INSTANCE: set DB_PASSWORD (password of ${DB_USER:-ingest_api})"; exit 1; }
+    printf '%s' "$DB_PASSWORD" | gcloud secrets create "$DB_SECRET" --replication-policy=automatic --data-file=-
+  fi
+  gcloud secrets add-iam-policy-binding "$DB_SECRET" \
+    --member="serviceAccount:${SA}" --role="roles/secretmanager.secretAccessor" >/dev/null
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member="serviceAccount:${SA}" --role="roles/cloudsql.client" --condition=None >/dev/null
+  ENV_VARS+=",CLOUDSQL_INSTANCE=${CLOUDSQL_INSTANCE},DB_NAME=${DB_NAME:-agroclima},DB_USER=${DB_USER:-ingest_api},REGISTRY_MODE=${REGISTRY_MODE:-warn}"
+  SECRETS+=",DB_PASSWORD=${DB_SECRET}:latest"
+  SQL_FLAGS=(--add-cloudsql-instances "$CLOUDSQL_INSTANCE")
+fi
+
 echo "== 7/7 Cloud Run"
 gcloud run deploy "$SERVICE" \
   --source . \
   --region "$REGION" \
   --service-account "$SA" \
   --allow-unauthenticated \
-  --set-env-vars "PROJECT_ID=${PROJECT_ID},TOPIC_ID=${TOPIC},TOKENS_FILE=/secrets/gateway-tokens.json" \
-  --set-secrets "/secrets/gateway-tokens.json=${SECRET}:latest" \
+  --set-env-vars "$ENV_VARS" \
+  --set-secrets "$SECRETS" \
+  ${SQL_FLAGS[@]+"${SQL_FLAGS[@]}"} \
   --memory 512Mi --cpu 1 --concurrency 80 \
   --min-instances 0 --max-instances 3
 
