@@ -10,6 +10,8 @@ API de ingesta de datos de **estaciones de aire**. Solo hay un tipo de estación
 
 Cualquier otra propiedad se rechaza con `422`.
 
+> **¿Programas el dispositivo (ESP32, Raspberry Pi)?** Lee la [guía para dispositivos](docs/GUIA-DISPOSITIVOS.md): formato de los envíos, respuestas, cola y reintentos, y ejemplos en Python y Arduino. Este README es para desplegar y administrar la API.
+
 ```
 Estación de aire (ESP32 / Raspberry)
         │  POST /v1/readings  (Bearer token)
@@ -38,6 +40,7 @@ Cloud Run  ──valida──►  Cloud SQL (Postgres)
 | `deploy.sh` | Configura Google Cloud y despliega (se puede relanzar) |
 | `tools/new_token.py` | Genera el token de un gateway |
 | `examples/air-station.json` | Payload de ejemplo de una estación de aire |
+| `docs/GUIA-DISPOSITIVOS.md` | Guía para quien programa los dispositivos |
 | `tests/test_api.py`, `tests/test_registry.py` | Pruebas locales sin Google Cloud |
 
 ## Despliegue
