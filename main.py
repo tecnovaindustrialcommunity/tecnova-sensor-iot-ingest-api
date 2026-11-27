@@ -2,28 +2,27 @@
 
 Receives batches of readings from air stations (air temperature, relative
 humidity and global radiation) over HTTPS, validates them against the
-property catalog and the sensor registry (Cloud SQL), and publishes one Pub/Sub message per reading. A BigQuery
-subscription on the topic writes the messages to the `readings` table.
+property catalog and the sensor registry, and stores them in Postgres (Cloud SQL),
+table ingest.readings.
 """
 import hashlib
 import json
 import logging
 import os
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Annotated, Literal, Optional
 
 from fastapi import FastAPI, Header, HTTPException
-from google.cloud import pubsub_v1
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 import registry
+import storage
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("ingest")
 
-PROJECT_ID = os.environ["PROJECT_ID"]
-TOPIC_ID = os.environ.get("TOPIC_ID", "readings-raw")
 TOKENS_FILE = os.environ.get("TOKENS_FILE", "/secrets/gateway-tokens.json")
 CATALOG_FILE = os.environ.get("CATALOG_FILE", str(Path(__file__).with_name("catalog.json")))
 
@@ -31,25 +30,26 @@ CATALOG_FILE = os.environ.get("CATALOG_FILE", str(Path(__file__).with_name("cata
 TOKEN_HASHES: dict[str, str] = json.loads(Path(TOKENS_FILE).read_text())
 # {property: {"unit": str, "min": float, "max": float}}
 CATALOG: dict[str, dict] = json.loads(Path(CATALOG_FILE).read_text())
-# Sensor -> gateway assignments from Cloud SQL (off / warn / enforce, see registry.py).
-REGISTRY = registry.from_env()
+DB = storage.from_env()
+# Sensor -> gateway assignments, cached from DB (off / warn / enforce, see registry.py).
+REGISTRY = registry.from_env(loader=lambda: DB.sensor_assignments())
 MAX_REGISTRY_MESSAGES = 50
 
-publisher = pubsub_v1.PublisherClient()
-topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
 
-app = FastAPI(title="agroclima-ingest-api", version="1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    DB.open()
+    yield
+    DB.close()
+
+
+app = FastAPI(title="agroclima-ingest-api", version="1.0", lifespan=lifespan)
 
 
 def _to_utc(v: datetime) -> datetime:
     if v.tzinfo is None:
         raise ValueError("timestamp must include a timezone (use Z for UTC)")
     return v.astimezone(timezone.utc)
-
-
-def _micros(v: datetime) -> int:
-    # BigQuery subscriptions accept TIMESTAMP as microseconds since the Unix epoch.
-    return int(v.timestamp() * 1_000_000)
 
 
 FiniteFloat = Annotated[float, Field(allow_inf_nan=False)]
@@ -129,18 +129,16 @@ def _check_registry(env: Envelope) -> None:
 
 def _row(env: Envelope, r: Reading, received_at: datetime) -> dict:
     return {
-        # Same sensor + property + ts => same id, so resent readings can be deduplicated.
-        "reading_id": hashlib.sha256(f"{r.sensorId}|{r.property}|{r.ts.isoformat()}".encode()).hexdigest()[:32],
         "gateway_id": env.gatewayId,
         "sensor_id": r.sensorId,
         "property": r.property,
-        "value_num": r.value,
+        "value": r.value,
         "unit": r.unit or CATALOG[r.property]["unit"],
-        "ts": _micros(r.ts),
+        "ts": r.ts,
         "aggregation": r.aggregation,
         "period_s": int(r.period.total_seconds()) if r.period else None,
-        "sent_at": _micros(env.sentAt),
-        "received_at": _micros(received_at),
+        "sent_at": env.sentAt,
+        "received_at": received_at,
     }
 
 
@@ -154,19 +152,11 @@ def ingest(env: Envelope, authorization: Optional[str] = Header(default=None)) -
     _authenticate(authorization, env.gatewayId)
     _check_registry(env)
     received_at = datetime.now(timezone.utc)
-    futures = [
-        publisher.publish(
-            topic_path,
-            json.dumps(_row(env, r, received_at)).encode(),
-            gateway_id=env.gatewayId,
-            property=r.property,
-        )
-        for r in env.readings
-    ]
     try:
-        for f in futures:
-            f.result(timeout=30)
-    except Exception:
-        # The gateway retries the whole batch; duplicates are removed by reading_id.
-        raise HTTPException(status_code=503, detail="could not queue readings, retry later")
+        DB.insert_readings([_row(env, r, received_at) for r in env.readings])
+    except Exception as e:
+        # Nothing was stored (one transaction). The gateway retries the whole batch;
+        # readings already stored (same sensor, property, ts) are skipped.
+        log.error("could not store batch from %s: %s", env.gatewayId, e)
+        raise HTTPException(status_code=503, detail="could not store readings, retry later")
     return {"accepted": len(env.readings)}

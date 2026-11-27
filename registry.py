@@ -1,6 +1,6 @@
 """Sensor registry: which gateway each sensor was assigned to, and when.
 
-The assignments live in Cloud SQL (Postgres), in the view ingest.sensor_gateway.
+The assignments live in Postgres, in the view ingest.sensor_gateway (see storage.py).
 They are kept in memory and reloaded every REGISTRY_TTL_S seconds, so a request
 never waits for the database except on the first load or after the cache expires.
 
@@ -50,7 +50,7 @@ class Registry:
         if mode not in MODES:
             raise ValueError(f"REGISTRY_MODE must be one of {MODES}, got '{mode}'")
         if mode != "off" and loader is None:
-            raise ValueError(f"REGISTRY_MODE={mode} needs a database (CLOUDSQL_INSTANCE or DB_HOST)")
+            raise ValueError(f"REGISTRY_MODE={mode} needs a loader")
         self.loader = loader
         self.mode = mode
         self.ttl_s = ttl_s
@@ -106,43 +106,9 @@ class Registry:
         return out
 
 
-def postgres_loader() -> Loader:
-    """Reads ingest.sensor_gateway with psycopg 3.
-
-    On Cloud Run it connects through the Cloud SQL socket /cloudsql/$CLOUDSQL_INSTANCE;
-    locally, set DB_HOST (and DB_PORT) instead.
-    """
-    import psycopg  # only needed when the registry is enabled
-
-    instance = os.environ.get("CLOUDSQL_INSTANCE")
-    conninfo = {
-        "host": f"/cloudsql/{instance}" if instance else os.environ["DB_HOST"],
-        "port": int(os.environ.get("DB_PORT", "5432")),
-        "dbname": os.environ.get("DB_NAME", "agroclima"),
-        "user": os.environ.get("DB_USER", "ingest_api"),
-        "password": os.environ.get("DB_PASSWORD", ""),
-        "connect_timeout": 5,
-        "application_name": "agroclima-ingest-api",
-    }
-    lookback_days = int(os.environ.get("REGISTRY_LOOKBACK_DAYS", "30"))
-
-    def load() -> list[Row]:
-        with psycopg.connect(**conninfo) as conn:
-            return conn.execute(
-                """SELECT sensor_id, gateway_id, valid_from, valid_to
-                   FROM ingest.sensor_gateway
-                   WHERE valid_to IS NULL OR valid_to > now() - make_interval(days => %s)""",
-                (lookback_days,),
-            ).fetchall()
-
-    return load
-
-
-def from_env() -> Registry:
-    has_db = bool(os.environ.get("CLOUDSQL_INSTANCE") or os.environ.get("DB_HOST"))
-    mode = os.environ.get("REGISTRY_MODE") or ("warn" if has_db else "off")
+def from_env(loader: Loader) -> Registry:
     return Registry(
-        loader=postgres_loader() if mode != "off" else None,
-        mode=mode,
+        loader=loader,
+        mode=os.environ.get("REGISTRY_MODE") or "warn",
         ttl_s=float(os.environ.get("REGISTRY_TTL_S", "60")),
     )

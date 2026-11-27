@@ -9,3 +9,5 @@ examples/
 __pycache__/
 *.pyc
 db/
+venv/
+.venv/
