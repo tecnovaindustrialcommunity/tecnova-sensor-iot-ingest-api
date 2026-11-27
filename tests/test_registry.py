@@ -138,6 +138,7 @@ def test_api_modes():
         r = post(unknown)
         assert r.status_code == 422 and stored() == []
         assert r.json()["detail"] == {"registry": ["sensor 'ghost' is not in the registry"]}
+        assert test_api.client.get("/health").json() == {"status": "ok", "registry": "enforce"}
         assert test_api.client.get("/healthz").json() == {"status": "ok", "registry": "enforce"}
 
         # warn: accepted anyway

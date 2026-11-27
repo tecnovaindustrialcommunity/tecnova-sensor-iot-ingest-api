@@ -121,7 +121,7 @@ Cada instancia de Cloud Run abre como máximo 5 conexiones (con `--max-instances
 
 Comprueba que cada `sensorId` de un lote estaba asignado, en el momento de la lectura (`ts`), al `gatewayId` que lo envía. Una asignación vale para `valid_from <= ts < valid_to` (`valid_to` NULL = vigente).
 
-**Modos** (`REGISTRY_MODE`; `/healthz` indica el activo):
+**Modos** (`REGISTRY_MODE`; `/health` indica el activo):
 
 | Modo | Lote con sensores no asignados | Registro no disponible |
 |---|---|---|

@@ -98,4 +98,4 @@ gcloud run deploy "$SERVICE" \
 URL="$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"
 echo
 echo "Deployed: ${URL}"
-echo "Test:     curl -s ${URL}/healthz"
+echo "Test:     curl -s ${URL}/health"

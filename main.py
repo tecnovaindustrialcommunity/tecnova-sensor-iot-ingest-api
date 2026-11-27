@@ -142,8 +142,11 @@ def _row(env: Envelope, r: Reading, received_at: datetime) -> dict:
     }
 
 
-@app.get("/healthz")
-def healthz() -> dict:
+# Cloud Run reserves paths ending in "z" (such as /healthz) and answers them itself with a 404,
+# so use /health there. /healthz is kept for local runs.
+@app.get("/health")
+@app.get("/healthz", include_in_schema=False)
+def health() -> dict:
     return {"status": "ok", "registry": REGISTRY.mode}
 
 
