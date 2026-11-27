@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "gatewayId": "gw-meteo-01",
+  "sentAt": "2026-11-26T09:00:15Z",
+  "readings": [
+    {
+      "sensorId": "meteo01-th",
+      "property": "air_temperature",
+      "value": 14.2,
+      "unit": "Cel",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "meteo01-th",
+      "property": "air_relative_humidity",
+      "value": 66.0,
+      "unit": "%",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "meteo01-pyr",
+      "property": "global_radiation",
+      "value": 412,
+      "unit": "W/m2",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "meteo01-par",
+      "property": "ppfd",
+      "value": 860,
+      "unit": "umol/m2/s",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "meteo01-wind",
+      "property": "wind_speed",
+      "value": 3.4,
+      "unit": "m/s",
+      "ts": "2026-11-26T09:00:00Z",
+      "aggregation": "mean",
+      "period": "PT10M"
+    },
+    {
+      "sensorId": "meteo01-wind",
+      "property": "wind_gust",
+      "value": 7.9,
+      "unit": "m/s",
+      "ts": "2026-11-26T09:00:00Z",
+      "aggregation": "max",
+      "period": "PT10M"
+    },
+    {
+      "sensorId": "meteo01-wind",
+      "property": "wind_direction",
+      "value": 245,
+      "unit": "deg",
+      "ts": "2026-11-26T09:00:00Z",
+      "aggregation": "mean",
+      "period": "PT10M"
+    },
+    {
+      "sensorId": "meteo01-rain",
+      "property": "precipitation",
+      "value": 0.4,
+      "unit": "mm",
+      "ts": "2026-11-26T09:00:00Z",
+      "aggregation": "sum",
+      "period": "PT10M"
+    },
+    {
+      "sensorId": "meteo01-baro",
+      "property": "atmospheric_pressure",
+      "value": 1016.8,
+      "unit": "hPa",
+      "ts": "2026-11-26T09:00:00Z"
+    }
+  ]
+}

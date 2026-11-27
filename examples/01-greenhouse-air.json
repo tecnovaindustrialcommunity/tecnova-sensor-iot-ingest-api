@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0",
+  "gatewayId": "gw-gh1-01",
+  "sentAt": "2026-11-26T09:00:12Z",
+  "readings": [
+    {
+      "sensorId": "gh1-c3-clima01",
+      "property": "air_temperature",
+      "value": 22.6,
+      "unit": "Cel",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "gh1-c3-clima01",
+      "property": "air_relative_humidity",
+      "value": 78.4,
+      "unit": "%",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "gh1-c3-clima01",
+      "property": "co2_concentration",
+      "value": 612,
+      "unit": "[ppm]",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "gh1-c3-par01",
+      "property": "ppfd",
+      "value": 418,
+      "unit": "umol/m2/s",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "gh1-c3-rad01",
+      "property": "global_radiation",
+      "value": 236,
+      "unit": "W/m2",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "gh1-c3-leaf01",
+      "property": "leaf_temperature",
+      "value": 21.1,
+      "unit": "Cel",
+      "ts": "2026-11-26T09:00:00Z"
+    }
+  ]
+}

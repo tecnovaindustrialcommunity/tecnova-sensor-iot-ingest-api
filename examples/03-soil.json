@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "1.0",
+  "gatewayId": "gw-gh1-01",
+  "sentAt": "2026-11-26T09:00:12Z",
+  "readings": [
+    {
+      "sensorId": "gh1-c3-soil07",
+      "property": "soil_temperature",
+      "value": 19.4,
+      "unit": "Cel",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "gh1-c3-soil07",
+      "property": "soil_vwc",
+      "value": 0.31,
+      "unit": "m3/m3",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "gh1-c3-soil07",
+      "property": "soil_ec_bulk",
+      "value": 1.8,
+      "unit": "dS/m",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "gh1-c3-soil07",
+      "property": "soil_ec_pore",
+      "value": 4.6,
+      "unit": "dS/m",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "gh1-c3-soil08",
+      "property": "soil_temperature",
+      "value": 18.7,
+      "unit": "Cel",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "gh1-c3-soil08",
+      "property": "soil_vwc",
+      "value": 0.27,
+      "unit": "m3/m3",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "gh1-c3-soil08",
+      "property": "soil_ec_bulk",
+      "value": 1.5,
+      "unit": "dS/m",
+      "ts": "2026-11-26T09:00:00Z"
+    },
+    {
+      "sensorId": "gh1-c3-ph02",
+      "property": "soil_ph",
+      "value": 6.4,
+      "unit": "[pH]",
+      "ts": "2026-11-26T09:00:00Z"
+    }
+  ]
+}

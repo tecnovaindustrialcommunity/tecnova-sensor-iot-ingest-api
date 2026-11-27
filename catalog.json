@@ -1,0 +1,38 @@
+{
+  "air_temperature":               { "kind": "number", "unit": "Cel",       "min": -50,  "max": 70 },
+  "air_relative_humidity":         { "kind": "number", "unit": "%",         "min": 0,    "max": 100 },
+  "co2_concentration":             { "kind": "number", "unit": "[ppm]",     "min": 0,    "max": 10000 },
+  "ppfd":                          { "kind": "number", "unit": "umol/m2/s", "min": 0,    "max": 3000 },
+  "global_radiation":              { "kind": "number", "unit": "W/m2",      "min": 0,    "max": 1500 },
+  "leaf_temperature":              { "kind": "number", "unit": "Cel",       "min": -20,  "max": 70 },
+
+  "wind_speed":                    { "kind": "number", "unit": "m/s",       "min": 0,    "max": 75 },
+  "wind_gust":                     { "kind": "number", "unit": "m/s",       "min": 0,    "max": 100 },
+  "wind_direction":                { "kind": "number", "unit": "deg",       "min": 0,    "max": 360 },
+  "precipitation":                 { "kind": "number", "unit": "mm",        "min": 0,    "max": 500 },
+  "atmospheric_pressure":          { "kind": "number", "unit": "hPa",       "min": 800,  "max": 1100 },
+
+  "soil_temperature":              { "kind": "number", "unit": "Cel",       "min": -20,  "max": 70 },
+  "soil_vwc":                      { "kind": "number", "unit": "m3/m3",     "min": 0,    "max": 1 },
+  "soil_ec_bulk":                  { "kind": "number", "unit": "dS/m",      "min": 0,    "max": 20 },
+  "soil_ec_pore":                  { "kind": "number", "unit": "dS/m",      "min": 0,    "max": 50 },
+  "soil_ph":                       { "kind": "number", "unit": "[pH]",      "min": 0,    "max": 14 },
+
+  "irrigation_volume":             { "kind": "number", "unit": "L",         "min": 0,    "max": 10000000 },
+  "irrigation_depth":              { "kind": "number", "unit": "mm",        "min": 0,    "max": 500 },
+  "irrigation_volume_per_dripper": { "kind": "number", "unit": "mL",        "min": 0,    "max": 100000 },
+  "water_ec":                      { "kind": "number", "unit": "dS/m",      "min": 0,    "max": 20 },
+  "water_ec_25":                   { "kind": "number", "unit": "dS/m",      "min": 0,    "max": 20 },
+  "water_temperature":             { "kind": "number", "unit": "Cel",       "min": 0,    "max": 60 },
+  "water_ph":                      { "kind": "number", "unit": "[pH]",      "min": 0,    "max": 14 },
+
+  "drain_volume":                  { "kind": "number", "unit": "L",         "min": 0,    "max": 1000000 },
+  "drain_depth":                   { "kind": "number", "unit": "mm",        "min": 0,    "max": 500 },
+  "drain_fraction":                { "kind": "number", "unit": "%",         "min": 0,    "max": 100 },
+  "drain_ec":                      { "kind": "number", "unit": "dS/m",      "min": 0,    "max": 30 },
+  "drain_ec_25":                   { "kind": "number", "unit": "dS/m",      "min": 0,    "max": 30 },
+  "drain_temperature":             { "kind": "number", "unit": "Cel",       "min": 0,    "max": 60 },
+  "drain_ph":                      { "kind": "number", "unit": "[pH]",      "min": 0,    "max": 14 },
+
+  "location":                      { "kind": "geopoint", "unit": null,      "min": null, "max": null }
+}

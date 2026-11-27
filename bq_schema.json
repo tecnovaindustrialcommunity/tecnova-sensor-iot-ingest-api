@@ -1,0 +1,17 @@
+[
+  { "name": "reading_id",    "type": "STRING",    "mode": "REQUIRED", "description": "sha256(sensor|property|ts), for deduplication" },
+  { "name": "gateway_id",    "type": "STRING",    "mode": "REQUIRED" },
+  { "name": "sensor_id",     "type": "STRING",    "mode": "REQUIRED" },
+  { "name": "property",      "type": "STRING",    "mode": "REQUIRED", "description": "Code from catalog.json" },
+  { "name": "value_num",     "type": "FLOAT64",   "mode": "NULLABLE" },
+  { "name": "value_geojson", "type": "STRING",    "mode": "NULLABLE", "description": "GeoJSON Point for location readings" },
+  { "name": "unit",          "type": "STRING",    "mode": "NULLABLE", "description": "UCUM" },
+  { "name": "ts",            "type": "TIMESTAMP", "mode": "REQUIRED", "description": "Measurement time (UTC)" },
+  { "name": "aggregation",   "type": "STRING",    "mode": "NULLABLE" },
+  { "name": "period_s",      "type": "INT64",     "mode": "NULLABLE" },
+  { "name": "event_id",      "type": "STRING",    "mode": "NULLABLE" },
+  { "name": "derived",       "type": "BOOL",      "mode": "NULLABLE" },
+  { "name": "extra",         "type": "STRING",    "mode": "NULLABLE", "description": "JSON: compensation, event, basedOnEventIds" },
+  { "name": "sent_at",       "type": "TIMESTAMP", "mode": "NULLABLE" },
+  { "name": "received_at",   "type": "TIMESTAMP", "mode": "REQUIRED" }
+]

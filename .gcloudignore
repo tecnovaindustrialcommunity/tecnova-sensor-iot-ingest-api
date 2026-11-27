@@ -1,0 +1,10 @@
+.gcloudignore
+.git
+.gitignore
+gateway-tokens.json
+deploy.sh
+tools/
+tests/
+examples/
+__pycache__/
+*.pyc

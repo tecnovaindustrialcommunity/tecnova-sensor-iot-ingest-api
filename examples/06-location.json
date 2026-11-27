@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "gatewayId": "tutabot-01",
+  "sentAt": "2026-11-26T09:00:12Z",
+  "readings": [
+    {
+      "sensorId": "tutabot-01",
+      "property": "location",
+      "value": {
+        "type": "Point",
+        "coordinates": [
+          -2.463712,
+          36.838104
+        ]
+      },
+      "ts": "2026-11-26T09:00:00Z"
+    }
+  ]
+}
