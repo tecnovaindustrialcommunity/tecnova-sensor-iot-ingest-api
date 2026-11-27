@@ -10,7 +10,7 @@ API de ingesta de datos de **estaciones de aire**. Solo hay un tipo de estación
 
 Cualquier otra propiedad se rechaza con `422`.
 
-> **¿Programas el dispositivo (ESP32, Raspberry Pi)?** Lee la [guía para dispositivos](docs/GUIA-DISPOSITIVOS.md): formato de los envíos, respuestas, cola y reintentos, y ejemplos en Python y Arduino. Este README es para desplegar y administrar la API.
+> **¿Programas el dispositivo (ESP32, Raspberry Pi)?** Lee la [guía para dispositivos](docs/GUIA-DISPOSITIVOS.md): formato del JSON, cómo llamar a la API y qué significa cada respuesta. Este README es para desplegar y administrar la API.
 
 ```
 Estación de aire (ESP32 / Raspberry)
@@ -142,6 +142,37 @@ PROJECT_ID=mi-proyecto CLOUDSQL_INSTANCE=mi-proyecto:europe-southwest1:<instanci
 - Las asignaciones se guardan en memoria y se recargan cada `REGISTRY_TTL_S` segundos (60). Un sensor recién dado de alta puede tardar hasta 60 s en aceptarse.
 - Si una recarga falla, la API sigue con la copia anterior y reintenta a los 10 s.
 - Solo se cargan las asignaciones vigentes o cerradas en los últimos `REGISTRY_LOOKBACK_DAYS` días (30). En `enforce`, las lecturas antiguas de un sensor que cambió de gateway hace más tiempo se rechazan.
+
+### Dar de alta una estación
+
+1. **Token** (en Cloud Shell, en la carpeta del repositorio): `python3 tools/new_token.py <gatewayId>` y `./deploy.sh`. Pasa el token al responsable del dispositivo por un canal privado, junto con la [guía para dispositivos](docs/GUIA-DISPOSITIVOS.md).
+2. **Registro** (Cloud SQL Studio, usuario `postgres`, base de datos `agroclima`):
+
+```sql
+INSERT INTO registry.gateways (gateway_id, hardware_id, description)
+VALUES ('gateway-station-with-pi3', '<MAC o nº de serie>', 'Estación con Raspberry Pi 3');
+
+INSERT INTO registry.sensors (sensor_id, model, serial_number)
+VALUES ('pi3-air01', '<modelo>', '<nº de serie>');
+
+INSERT INTO registry.sensor_installations
+  (sensor_id, gateway_id, site_id, zone_id, feature_of_interest, height_m, position, valid_from)
+VALUES
+  ('pi3-air01', 'gateway-station-with-pi3', 'farm-01', 'gh1', 'greenhouse-1-air', 2.0,
+   'centro del invernadero, sobre el cultivo', '2026-11-27T00:00:00Z');
+```
+
+`valid_from` debe ser anterior a la primera lectura del sensor.
+
+**Mover un sensor a otra estación:** cierra la instalación actual y abre otra en el mismo instante.
+
+```sql
+UPDATE registry.sensor_installations SET valid_to = '2026-12-01T10:00:00Z'
+WHERE sensor_id = 'pi3-air01' AND valid_to IS NULL;
+
+INSERT INTO registry.sensor_installations (sensor_id, gateway_id, site_id, zone_id, height_m, valid_from)
+VALUES ('pi3-air01', '<otra estación>', 'farm-01', 'gh2', 2.0, '2026-12-01T10:00:00Z');
+```
 
 ## Variables de entorno
 
