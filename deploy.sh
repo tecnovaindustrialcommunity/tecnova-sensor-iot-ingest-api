@@ -74,6 +74,14 @@ for s in "$SECRET" "$DB_SECRET"; do
 done
 gcloud projects add-iam-policy-binding "$PROJECT_ID" \
   --member="serviceAccount:${SA}" --role="roles/cloudsql.client" --condition=None >/dev/null
+# "gcloud run deploy --source" builds the image with Cloud Build, which runs as the Compute Engine
+# default service account. New projects no longer give it any role, so the build cannot read the
+# uploaded source ("storage.objects.get denied"). This role lets it read the source, push the
+# image to Artifact Registry and write build logs.
+PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/cloudbuild.builds.builder" --condition=None >/dev/null
 
 echo "== 5/5 Cloud Run"
 gcloud run deploy "$SERVICE" \
