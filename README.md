@@ -1,12 +1,15 @@
 # agroclima-ingest-api
 
-API de ingesta de datos de **estaciones de aire**. Solo hay un tipo de estación, con tres sensores:
+API de ingesta de datos de **estaciones de aire**. Solo hay un tipo de estación, y estas son las propiedades que acepta:
 
 | Propiedad | Unidad (UCUM) | Rango válido |
 |---|---|---|
 | `air_temperature` | `Cel` | -50 … 70 |
 | `air_relative_humidity` | `%` | 0 … 100 |
 | `global_radiation` | `W/m2` | 0 … 1500 |
+| `ppfd` | `umol/m2/s` | 0 … 2500 |
+
+`ppfd` es la densidad de flujo de fotones fotosintéticos (PPFD) que mide un sensor PAR. Si una estación no tiene piranómetro, puede mandar el PPFD tal cual en vez de convertirlo a `global_radiation`.
 
 Cualquier otra propiedad se rechaza con `422`.
 
@@ -32,7 +35,7 @@ Cloud Run  ──valida──►  Cloud SQL (Postgres)
 | `main.py` | La API (FastAPI) |
 | `storage.py` | Conexión a Postgres: guarda lecturas y lee el registro |
 | `registry.py` | Registro de sensores: qué sensor estaba en qué gateway y cuándo (en memoria, recargado cada 60 s) |
-| `catalog.json` | Las tres propiedades de la estación de aire, con su unidad canónica (UCUM) y rango válido |
+| `catalog.json` | Las propiedades de la estación de aire, con su unidad canónica (UCUM) y rango válido |
 | `db/schema.sql` | Tablas del registro de sensores (solo si se empieza de cero) |
 | `db/interface.sql` | Esquema `ingest`: tabla de lecturas, vista del registro y permisos de `ingest_api` |
 | `db/seed.sql` | Datos de ejemplo del registro, coherentes con `examples/` |
@@ -200,7 +203,7 @@ Un lote se acepta o se rechaza **entero**: si una lectura es inválida, no se gu
 ## Reglas del payload
 
 - Sobre: `schemaVersion` (`"1.0"`), `gatewayId`, `sentAt`, `readings[]` (1–1000).
-- Lectura: `sensorId`, `property` (una de las tres del catálogo), `value` (número), `ts`. Opcionales: `unit`, `aggregation` (`mean`, `min`, `max`, `last`), `period` (ISO 8601, p. ej. `PT5M`).
+- Lectura: `sensorId`, `property` (una de las del catálogo), `value` (número), `ts`. Opcionales: `unit`, `aggregation` (`mean`, `min`, `max`, `last`), `period` (ISO 8601, p. ej. `PT5M`).
 - Fechas con zona horaria (`Z`). Se guardan en UTC.
 - `unit`, si se envía, debe coincidir con la del catálogo (todavía no hay conversión de unidades).
 - No se admiten campos desconocidos. Los datos de instalación (sitio, zona, altura) van en el registro de sensores, no aquí.
