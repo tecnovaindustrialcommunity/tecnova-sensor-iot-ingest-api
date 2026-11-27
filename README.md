@@ -34,6 +34,7 @@ Cloud Run  ──valida──►  Cloud SQL (Postgres)
 | `db/schema.sql` | Tablas del registro de sensores (solo si se empieza de cero) |
 | `db/interface.sql` | Esquema `ingest`: tabla de lecturas, vista del registro y permisos de `ingest_api` |
 | `db/seed.sql` | Datos de ejemplo del registro, coherentes con `examples/` |
+| `db/apply.sh` | Ejecuta los tres `.sql` en Cloud SQL desde Cloud Shell |
 | `deploy.sh` | Configura Google Cloud y despliega (se puede relanzar) |
 | `tools/new_token.py` | Genera el token de un gateway |
 | `examples/air-station.json` | Payload de ejemplo de una estación de aire |
@@ -54,15 +55,13 @@ CLOUDSQL_INSTANCE=mi-proyecto:europe-southwest1:<instancia> \
 DB_PASSWORD='...' \
 ./deploy.sh
 
-# 3. Crear las tablas en la base de datos agroclima, como postgres (necesita psql instalado)
-gcloud sql connect <instancia> --user=postgres --database=agroclima
-#   y dentro de psql:
-#   \i db/schema.sql      registro de sensores (omítelo si ya tienes uno; ver "Base de datos")
-#   \i db/interface.sql   lecturas, vista del registro y permisos
-#   \i db/seed.sql        opcional: datos de ejemplo
+# 3. Crear las tablas (desde Cloud Shell, que tiene psql). Pide la contraseña de postgres.
+INSTANCE=<instancia> ./db/apply.sh --seed     # sin --seed, no carga los sensores de ejemplo
 ```
 
-Sin `psql`, puedes pegar el contenido de los tres archivos, en ese orden, en Cloud SQL Studio (consola de Google Cloud).
+`db/apply.sh` ejecuta `db/schema.sql`, `db/interface.sql` y, con `--seed`, `db/seed.sql`. Se puede repetir sin duplicar nada. Si ya tienes un registro de sensores propio, no lo uses: ver "Base de datos".
+
+Sin Cloud Shell, puedes pegar el contenido de los tres archivos, en ese orden, en Cloud SQL Studio (consola de Google Cloud).
 
 Hasta que existan las tablas, la API responde `503`: los dispositivos reintentan y no se pierde nada.
 
