@@ -2,5 +2,5 @@
   "air_temperature":       { "unit": "Cel",       "min": -50, "max": 70 },
   "air_relative_humidity": { "unit": "%",         "min": 0,   "max": 100 },
   "global_radiation":      { "unit": "W/m2",      "min": 0,   "max": 1500 },
-  "ppfd":                  { "unit": "umol/m2/s", "min": 0,   "max": 2500 }
+  "PPFD":                  { "unit": "umol/m2/s", "min": 0,   "max": 2500 }
 }

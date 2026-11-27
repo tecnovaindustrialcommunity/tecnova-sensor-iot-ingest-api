@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS registry.gateways (
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 
--- A physical air sensor (measures air_temperature, air_relative_humidity, global_radiation, ppfd).
+-- A physical air sensor (measures air_temperature, air_relative_humidity, global_radiation, PPFD).
 CREATE TABLE IF NOT EXISTS registry.sensors (
   sensor_id     text PRIMARY KEY,
   model         text,

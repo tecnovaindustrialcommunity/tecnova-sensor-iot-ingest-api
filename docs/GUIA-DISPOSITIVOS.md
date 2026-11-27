@@ -72,12 +72,12 @@ Para comprobar que la API está viva: `GET https://agroclima-ingest-api-11055812
 | `air_temperature` | `Cel` | -50 … 70 |
 | `air_relative_humidity` | `%` | 0 … 100 |
 | `global_radiation` | `W/m2` | 0 … 1500 |
-| `ppfd` | `umol/m2/s` | 0 … 2500 |
+| `PPFD` | `umol/m2/s` | 0 … 2500 |
 
-**Si tu sensor mide PPFD (sensor PAR) y no radiación global:** envía el valor medido como `ppfd`, en `umol/m2/s`. La unidad se escribe con `u` y no con `µ`: `µmol/m2/s` se rechaza.
+**Si tu sensor mide PPFD (sensor PAR) y no radiación global:** envía el valor medido como `PPFD` (en mayúsculas), en `umol/m2/s`. La unidad se escribe con `u` y no con `µ`: `µmol/m2/s` se rechaza.
 
 ```json
-{ "sensorId": "pi3-air01", "property": "ppfd", "value": 495.3, "unit": "umol/m2/s", "ts": "2026-11-27T09:05:00Z", "aggregation": "mean", "period": "PT5M" }
+{ "sensorId": "pi3-air01", "property": "PPFD", "value": 495.3, "unit": "umol/m2/s", "ts": "2026-11-27T09:05:00Z", "aggregation": "mean", "period": "PT5M" }
 ```
 
 No lo conviertas a `global_radiation`. Esa conversión divide el PPFD entre un factor que va de 2,0 a 2,3 según esté el cielo, así que solo da una estimación, sin la calidad de un piranómetro. Además, la API no distingue un valor convertido de uno medido. Manda `global_radiation` solo si tienes un piranómetro.

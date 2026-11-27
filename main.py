@@ -58,7 +58,7 @@ FiniteFloat = Annotated[float, Field(allow_inf_nan=False)]
 class Reading(BaseModel):
     model_config = ConfigDict(extra="forbid")
     sensorId: str = Field(min_length=1, max_length=128)
-    property: str = Field(pattern=r"^[a-z][a-z0-9_]{1,63}$")
+    property: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_]{1,63}$")
     value: FiniteFloat
     unit: Optional[str] = Field(default=None, max_length=32)
     ts: datetime

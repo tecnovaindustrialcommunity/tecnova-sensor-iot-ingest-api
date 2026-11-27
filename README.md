@@ -7,9 +7,9 @@ API de ingesta de datos de **estaciones de aire**. Solo hay un tipo de estación
 | `air_temperature` | `Cel` | -50 … 70 |
 | `air_relative_humidity` | `%` | 0 … 100 |
 | `global_radiation` | `W/m2` | 0 … 1500 |
-| `ppfd` | `umol/m2/s` | 0 … 2500 |
+| `PPFD` | `umol/m2/s` | 0 … 2500 |
 
-`ppfd` es la densidad de flujo de fotones fotosintéticos (PPFD) que mide un sensor PAR. Si una estación no tiene piranómetro, puede mandar el PPFD tal cual en vez de convertirlo a `global_radiation`.
+`PPFD` es la densidad de flujo de fotones fotosintéticos que mide un sensor PAR. Si una estación no tiene piranómetro, puede mandar el PPFD tal cual en vez de convertirlo a `global_radiation`.
 
 Cualquier otra propiedad se rechaza con `422`.
 

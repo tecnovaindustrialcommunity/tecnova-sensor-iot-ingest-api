@@ -75,17 +75,17 @@ def test_all_examples_accepted():
 
 
 def test_catalog_is_air_station_only():
-    assert set(main.CATALOG) == {"air_temperature", "air_relative_humidity", "global_radiation", "ppfd"}
+    assert set(main.CATALOG) == {"air_temperature", "air_relative_humidity", "global_radiation", "PPFD"}
 
 
 def test_ppfd_accepted():
     main.DB = FakeDB()
     p = load("air-station.json")
-    p["readings"].append({"sensorId": "gh1-air01", "property": "ppfd",
+    p["readings"].append({"sensorId": "gh1-air01", "property": "PPFD",
                           "value": 495.3, "unit": "umol/m2/s", "ts": "2026-11-26T09:00:00Z",
                           "aggregation": "mean", "period": "PT5M"})
     assert post(p).status_code == 202
-    ppfd = {r["property"]: r for r in stored()}["ppfd"]
+    ppfd = {r["property"]: r for r in stored()}["PPFD"]
     assert ppfd["value"] == 495.3 and ppfd["unit"] == "umol/m2/s"
 
 
@@ -154,11 +154,11 @@ def test_rejections():
     _bad(lambda p: p["readings"][0].update(unit="degF"))                        # wrong unit
     _bad(lambda p: p["readings"][1].update(value=130))                          # RH out of range
     _bad(lambda p: p["readings"][2].update(value=-5))                           # negative radiation
-    ppfd = {"property": "ppfd", "unit": "umol/m2/s"}
+    ppfd = {"property": "PPFD", "unit": "umol/m2/s"}
     _bad(lambda p: p["readings"][2].update(ppfd, value=3000))                   # PPFD out of range
     _bad(lambda p: p["readings"][2].update(ppfd, value=-1))                     # negative PPFD
     _bad(lambda p: p["readings"][2].update(ppfd, value=500, unit="µmol/m2/s"))  # UCUM micro is "u", not "µ"
-    _bad(lambda p: p["readings"][2].update(property="PPFD", unit="umol/m2/s"))  # property names are lowercase
+    _bad(lambda p: p["readings"][2].update(property="ppfd", unit="umol/m2/s"))  # property names are case-sensitive
     _bad(lambda p: p["readings"][0].update(value="warm"))                       # numbers only
     _bad(lambda p: p["readings"][0].update(heightM=1.5))                        # installation data belongs in the registry
     _bad(lambda p: p["readings"][0].update(eventId="irr-1"))                    # no irrigation events any more
