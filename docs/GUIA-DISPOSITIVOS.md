@@ -2,17 +2,18 @@
 
 Cómo enviar lecturas de una estación de aire a la API.
 
-## Lo que te pasa el administrador
+## Lo que necesitas
 
-- **URL de la API**
-- **`gatewayId`** de tu estación, por ejemplo `gateway-station-with-pi3`
-- **Token** de esa estación. Es secreto: guárdalo en la configuración del dispositivo, no en el código ni en git.
-- **`sensorId`** de cada sensor, por ejemplo `pi3-air01`
+- **URL de la API:** `https://agroclima-ingest-api-110558122729.europe-southwest1.run.app`
+- Y te lo pasa el administrador:
+  - **`gatewayId`** de tu estación, por ejemplo `gateway-station-with-pi3`
+  - **Token** de esa estación. Es secreto: guárdalo en la configuración del dispositivo, no en el código ni en git.
+  - **`sensorId`** de cada sensor, por ejemplo `pi3-air01`
 
 ## Llamada
 
 ```
-POST <URL>/v1/readings
+POST https://agroclima-ingest-api-110558122729.europe-southwest1.run.app/v1/readings
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
@@ -35,11 +36,11 @@ Si todo va bien, responde `202` con `{"accepted": 3}`.
 Para probar con `curl`, guarda el JSON en `lote.json` y ejecuta:
 
 ```bash
-curl -X POST "<URL>/v1/readings" -H "Authorization: Bearer <token>" \
+curl -X POST "https://agroclima-ingest-api-110558122729.europe-southwest1.run.app/v1/readings" -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" -d @lote.json
 ```
 
-Para comprobar que la API está viva: `GET <URL>/health`. Usa `/health` y no `/healthz`, que en Cloud Run responde `404`.
+Para comprobar que la API está viva: `GET https://agroclima-ingest-api-110558122729.europe-southwest1.run.app/health`. Usa `/health` y no `/healthz`, que en Cloud Run responde `404`.
 
 ## Campos
 
